@@ -1,0 +1,30 @@
+<% dhcp['global_options'].each do |option| %>
+  <%= option %><%= ';' unless option.end_with?(';') %>
+<% end %>
+
+<% dhcp['subnets'].each do |subnet| %>
+  subnet <%= subnet['network'] %> netmask <%= subnet['netmask'] %> {
+
+    range <%= subnet['range_first'] %> <%= subnet['range_last'] %>;
+
+    <% subnet['options'].each do |option| %>
+    <%= option %><%= ';' unless option.end_with?(';') %>
+    <% end if subnet.has_key? 'options' %>
+
+    next-server <%= subnet['next_server'] %>;
+    if exists user-class and option user-class = "iPXE" {
+      filename "<%= subnet['ipxe_script'] %>";
+    } else {
+      filename "undionly.kpxe";
+    }
+
+    <% subnet['hosts'].each do |host| %>
+    host <%= host['name'] %> {
+      hardware ethernet <%= host['mac'] %>;
+      fixed-address <%= host['ip'] %>;
+    }
+    <% end if subnet.has_key? 'hosts' %>
+
+  }
+<% end if dhcp.has_key? 'subnets' %>
+

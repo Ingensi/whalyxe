@@ -1,0 +1,76 @@
+#!/usr/bin/ruby
+
+# Dependencies
+require 'yaml'
+require 'logger'
+require 'erubis'
+
+# Folders constants
+PATHS = {
+    whalyxe: '/etc/whalyxe',
+    lib: '/usr/lib/whalyxe',
+    dhcp_config: '/etc/dhcp/dhcpd.conf',
+    logs: '/etc/whalyxe/logs',
+    binaries: {
+        nginx: '/usr/sbin/nginx',
+        tftp: '/bin/tftp_server',
+        dhcp: '/usr/sbin/dhcpd -f -cf /etc/dhcp/dhcpd.conf -pf /var/run/dhcpd.pid'
+    }
+}
+
+# Whalyxe constants
+WHALYXE = {
+    version: '1.0.0',
+    config: YAML.load_file("#{PATHS[:whalyxe]}/whalyxe.conf"),
+    tftp_root: "#{PATHS[:whalyxe]}/tftp",
+    logs: {
+        dhcp: File.open("#{PATHS[:logs]}/dhcp.log", 'w'),
+        nginx: File.open("#{PATHS[:logs]}/http.log", 'w'),
+        tftp: File.open("#{PATHS[:logs]}/tftp.log", 'w')
+    }
+}
+
+# Logging helper
+LOGGER = Logger.new(STDOUT)
+LOGGER.level = case WHALYXE[:config]['log_level']
+                 when 'debug'
+                   Logger::DEBUG
+                 when 'info'
+                   Logger::INFO
+                 else
+                   Logger::WARN
+               end
+
+# Compiling DHCP configuration file
+def configure_dhcp
+  LOGGER.info 'Compiling dhcp file'
+  # Generating file from template
+  config = Erubis::Eruby.new(File.read "#{PATHS[:lib]}/template/dhcpd.conf.erb").result({dhcp: WHALYXE[:config]['dhcp']})
+  # Writing file
+  File.write PATHS[:dhcp_config], config
+  LOGGER.debug "Compiled dhcp config file :\n\n#{config}\n"
+  LOGGER.info 'Configuring dhcp done !'
+rescue
+  LOGGER.fatal 'An error occured while compiling dhcpd.conf file. Aborting...'
+  exit 1
+end
+
+# Entry point
+def main
+  LOGGER.info "Starting up Whalyxe, version #{WHALYXE[:version]} !"
+  # Compile dhcp server configuration
+  configure_dhcp
+  # Start dhcpd server
+  LOGGER.info 'Starting up dhcp server'
+  Process.spawn PATHS[:binaries][:dhcp], out: WHALYXE[:logs][:dhcp], err: WHALYXE[:logs][:dhcp]
+  # Start tftp server
+  LOGGER.info 'Starting up tftp server'
+  Process.spawn PATHS[:binaries][:tftp], out: WHALYXE[:logs][:tftp], err: WHALYXE[:logs][:tftp]
+  # Start http server
+  LOGGER.info 'Starting up http server'
+  Process.spawn PATHS[:binaries][:nginx], out: WHALYXE[:logs][:nginx], err: WHALYXE[:logs][:nginx]
+  # Keeping main process running so the container wont close
+  sleep
+end
+
+main
