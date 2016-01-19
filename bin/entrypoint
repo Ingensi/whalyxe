@@ -4,7 +4,7 @@ if [ ! -f "/etc/whalyxe/whalyxe.conf" ]; then
     echo "[DOCKER/ENTRYPOINT] Deploying standard Whalyxe configuration..."
     cp /usr/lib/whalyxe/template/whalyxe.conf /etc/whalyxe/whalyxe.conf
     cp -R /usr/lib/whalyxe/tftp /etc/whalyxe/tftp
-    cp -R /usr/lib/whalyxe/www  /etc/whalyxe/www
+    cp -R /usr/lib/whalyxe/www /etc/whalyxe/www
     mkdir -p /etc/whalyxe/logs/
 fi
 

@@ -1,0 +1,4 @@
+#!ipxe
+
+echo Reloading start.ipxe ...
+chain start.ipxe

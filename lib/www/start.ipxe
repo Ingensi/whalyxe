@@ -1,6 +1,20 @@
 #!ipxe
 
-set base-url http://stable.release.core-os.net/amd64-usr/current
-kernel ${base-url}/coreos_production_pxe.vmlinuz cloud-config-url=http://example.com/pxe-cloud-config.yml
-initrd ${base-url}/coreos_production_pxe_image.cpio.gz
-boot
+set menu-timeout 0
+:start
+menu ~ Ingensi Whalyxe ~
+item --gap      Operating systems :
+item ubuntu		Ubuntu
+item centos		CentOS
+item coreos     CoreOS
+item rancheros  RancherOS
+item --gap      Actions :
+item netinfo	Network information
+item reload		Reload
+item reboot		Reboot
+choose selected || goto start
+goto sub_file
+
+:sub_file
+chain ${selected}.ipxe
+chain start.ipxe

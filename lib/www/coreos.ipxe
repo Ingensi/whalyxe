@@ -1,0 +1,17 @@
+#!ipxe
+
+:coreos
+menu ~ Ingensi Whalyxe ~ CoreOS ~
+item --gap      CoreOS version channel :
+item stable     Stable channel
+item beta		Beta channel
+item alpha		Alpha channel
+choose channel || chain start.ipxe
+
+set base-url http://${channel}.release.core-os.net/amd64-usr/current
+set cmdline selinux=0 console=ttyS0,115200n8 console=tty0
+echo -n Enter cloud-config url: ${}
+read cloud-config-url
+kernel ${base-url}/coreos_production_pxe.vmlinuz cloud-config-url=${cloud-config-url}
+initrd ${base-url}/coreos_production_pxe_image.cpio.gz
+boot

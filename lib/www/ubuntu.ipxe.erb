@@ -1,0 +1,34 @@
+#!ipxe
+
+<%
+  require 'net/http'
+  mirror = Net::HTTP.get('mirrors.ubuntu.com', '/mirrors.txt').to_s.split("\n")[0]
+%>
+
+set mirror <%= mirror %>
+
+:ubuntu
+menu ~ Ingensi Whalyxe ~ Ubuntu ~
+item --gap      Ubuntu versions :
+item wily Ubuntu 15.10 Wily Werewolf
+item vivid Ubuntu 15.04 Vivid Vervet
+item utopic Ubuntu 14.10 Utopic Unicorn
+item trusty Ubuntu 14.04 LTS Trusty Tahr
+item saucy Ubuntu 13.10 Saucy Salamander
+item quantal Ubuntu 12.10 Quantal Quetzal
+item precise Ubuntu 12.04 LTS Precise Pangolin
+item mirror Set mirror url [ ${mirror} ]
+choose version || chain start.ipxe
+iseq ${version} mirror && goto mirror || goto boot
+
+:mirror
+echo -n Specify mirror for CentOS ${osversion}: && read mirror
+clear bt
+goto boot_type
+
+:boot
+set dir ubuntu/dists/${version}/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64
+imgfree
+kernel ${mirror}/${dir}/linux
+initrd ${mirror}/${dir}/initrd.gz
+boot

@@ -4,6 +4,8 @@
 require 'yaml'
 require 'logger'
 require 'erubis'
+require 'fileutils'
+require 'webrick'
 
 # Folders constants
 PATHS = {
@@ -18,7 +20,6 @@ PATHS = {
 }
 
 BINARIES = {
-    nginx: '/usr/sbin/nginx',
     tftp: "/usr/sbin/in.tftpd -l -R 4096:32767 -s #{PATHS[:whalyxe]}/tftp",
     dhcp: "#{PATHS[:dhcp][:bin]} -f -cf #{PATHS[:dhcp][:config]} -pf #{PATHS[:dhcp][:pid]}"
 }
@@ -28,9 +29,12 @@ WHALYXE = {
     version: '1.0.0',
     config: YAML.load_file("#{PATHS[:whalyxe]}/whalyxe.conf"),
     tftp_root: "#{PATHS[:whalyxe]}/tftp",
+    folders: {
+        www: "#{PATHS[:whalyxe]}/www"
+    },
     logs: {
         dhcp: File.open("#{PATHS[:logs]}/dhcp.log", 'w'),
-        nginx: File.open("#{PATHS[:logs]}/http.log", 'w'),
+        http: File.open("#{PATHS[:logs]}/http.log", 'w'),
         tftp: File.open("#{PATHS[:logs]}/tftp.log", 'w')
     }
 }
@@ -60,24 +64,79 @@ rescue
   exit 1
 end
 
+# Reset a directory from its library counterpart
+def copy_from_lib(folder_name)
+  LOGGER.warn "Reset #{PATHS[:whalyxe]}/#{folder_name} to its default content"
+  `rm -rf #{PATHS[:whalyxe]}/#{folder_name}`
+  `mkdir #{PATHS[:whalyxe]}/#{folder_name}`
+  `cp -R #{PATHS[:lib]}/#{folder_name}/* #{PATHS[:whalyxe]}/#{folder_name}/`
+end
+
+# React on args
+def parse_args
+  if ARGV.include? '--reset-www'
+    copy_from_lib 'www'
+  end
+  if ARGV.include? '--reset-tftp'
+    copy_from_lib 'tftp'
+  end
+end
+
+# Bundled HTTP Server to serve iPXE files
+class HttpServer
+  # Main server servlet
+  class IpxeServlet < WEBrick::HTTPServlet::AbstractServlet
+    def do_GET (request, response)
+      file_path =  "#{WHALYXE[:folders][:www]}/#{request.path}"
+      erb_file_path = "#{file_path}.erb"
+      response.content_type = 'text/plain'
+      if File.exist? file_path
+        response.status = 200
+        response.body = File.read file_path
+      elsif file_path.end_with? '.ipxe' and File.exist? erb_file_path
+        begin
+          LOGGER.debug "Loading dynamic file : #{request.path}.erb"
+          response.status = 200
+          response.body = Erubis::Eruby.new(File.read erb_file_path).result({})
+        rescue
+          response.status = 500
+        end
+      else
+        response.status = 404
+      end
+    end
+  end
+  # Initialize WEBrick server
+  def init
+    server = WEBrick::HTTPServer.new(
+        Port: 80,
+        Logger: WEBrick::Log.new(WHALYXE[:logs][:http])
+    )
+    server.mount '/', IpxeServlet
+    server.start
+    LOGGER.info 'HTTP server started up !'
+  end
+end
+
 # Entry point
 def main
+  parse_args
   LOGGER.info "Starting up Whalyxe, version #{WHALYXE[:version]} !"
   # Compile dhcp server configuration
   configure_dhcp
   # Start dhcpd server
-  LOGGER.info 'Starting up dhcp server'
+  LOGGER.info 'Starting up external dhcp server (ISC DHCP Server)'
   Process.spawn BINARIES[:dhcp], out: WHALYXE[:logs][:dhcp], err: WHALYXE[:logs][:dhcp]
   # Start tftp server
-  LOGGER.info 'Starting up tftp server'
+  LOGGER.info 'Starting up external tftp server (tftp-hpa)'
   Process.spawn BINARIES[:tftp], out: WHALYXE[:logs][:tftp], err: WHALYXE[:logs][:tftp]
   # Start http server
-  LOGGER.info 'Starting up http server'
-  Process.spawn BINARIES[:nginx], out: WHALYXE[:logs][:nginx], err: WHALYXE[:logs][:nginx]
+  LOGGER.info 'Starting up bundled http server (WEBrick)'
+  HttpServer.new.init
   # Keeping main process running so the container wont close
   sleep
 rescue
-  LOGGER.fatal 'Something nasty happened to Whalyxe... this is... bad, time to abort !'
+  LOGGER.fatal 'Something nasty happened to Whalyxe... this is... bad...'
   exit 2
 end
 
