@@ -27,7 +27,7 @@ clear bt
 goto boot_settings
 
 :kernel
-echo Specify kernel args URL for Ubuntu ${version} :
+echo Specify kernel args for Ubuntu ${version} :
 read args
 clear bt
 goto boot_settings
@@ -35,6 +35,6 @@ goto boot_settings
 :boot
 set dir
 imgfree
-kernel http://${mirror}/ubuntu/dists/${version}/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux
+kernel http://${mirror}/ubuntu/dists/${version}/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux ${args}
 initrd http://${mirror}/ubuntu/dists/${version}/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/initrd.gz
 boot

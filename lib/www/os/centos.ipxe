@@ -26,7 +26,7 @@ clear bt
 goto boot_settings
 
 :kernel
-echo Specify kernel args URL for CentOS ${osversion} :
+echo Specify kernel args for CentOS ${osversion} :
 read args
 clear bt
 goto boot_settings
