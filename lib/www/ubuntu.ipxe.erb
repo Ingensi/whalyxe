@@ -1,11 +1,6 @@
 #!ipxe
 
-<%
-  require 'net/http'
-  mirror = Net::HTTP.get('mirrors.ubuntu.com', '/mirrors.txt').to_s.split("\n")[0]
-%>
-
-set mirror <%= mirror %>
+set mirror http://archive.ubuntu.com/ubuntu
 
 :ubuntu
 menu ~ Ingensi Whalyxe ~ Ubuntu ~
@@ -24,7 +19,7 @@ iseq ${version} mirror && goto mirror || goto boot
 :mirror
 echo -n Specify mirror for CentOS ${osversion}: && read mirror
 clear bt
-goto boot_type
+goto ubuntu
 
 :boot
 set dir ubuntu/dists/${version}/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64
