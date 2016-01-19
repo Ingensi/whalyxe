@@ -1,6 +1,0 @@
-#!/usr/bin/python
-
-import tftpy
-
-server = tftpy.TftpServer('/etc/whalyxe/tftp/')
-server.listen('0.0.0.0', 69)
