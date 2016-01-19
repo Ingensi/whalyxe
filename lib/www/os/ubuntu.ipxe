@@ -1,0 +1,40 @@
+#!ipxe
+
+set mirror archive.ubuntu.com
+
+:ubuntu
+menu ~ Ingensi Whalyxe ~ Ubuntu ~
+item --gap      Ubuntu versions :
+item wily Ubuntu 15.10 Wily Werewolf
+item vivid Ubuntu 15.04 Vivid Vervet
+item utopic Ubuntu 14.10 Utopic Unicorn
+item trusty Ubuntu 14.04 LTS Trusty Tahr
+choose version || chain ../start.ipxe
+goto boot_settings
+
+:boot_settings
+menu ~ Ingensi Whalyxe ~ Ubuntu : Boot settings ~
+item boot Launch installer
+item mirror Set mirror url [ ${mirror} ]
+item kernel Set kernel args [ ${args} ]
+choose bt || goto ubuntu
+goto ${bt}
+
+:mirror
+echo Specify mirror for Ubuntu ${version} :
+read mirror
+clear bt
+goto boot_settings
+
+:kernel
+echo Specify kernel args URL for Ubuntu ${version} :
+read args
+clear bt
+goto boot_settings
+
+:boot
+set dir
+imgfree
+kernel http://${mirror}/ubuntu/dists/${version}/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux
+initrd http://${mirror}/ubuntu/dists/${version}/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/initrd.gz
+boot

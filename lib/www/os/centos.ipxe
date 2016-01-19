@@ -1,0 +1,37 @@
+#!ipxe
+
+set mirror mirror.centos.org
+
+:centos
+menu ~ Ingensi Whalyxe ~ CentOS ~
+item 7.2.1511   CentOS 7.2
+item 7.1.1503   CentOS 7.1
+item 7          CentOS 7.0
+item 6.7        CentOS 6.7
+choose osversion || chain /start.ipxe
+goto boot_settings
+
+:boot_settings
+menu ~ Ingensi Whalyxe ~ CentOS : Boot settings ~
+item boot Launch installer
+item mirror Set mirror url [ ${mirror} ]
+item kernel Set kernel args [ ${args} ]
+choose bt || goto centos
+goto ${bt}
+
+:mirror
+echo Specify mirror for CentOS ${osversion} :
+read mirror
+clear bt
+goto boot_settings
+
+:kernel
+echo Specify kernel args URL for CentOS ${osversion} :
+read args
+clear bt
+goto boot_settings
+
+:boot
+kernel http://${mirror}/centos/${osversion}/os/x86_64/images/pxeboot/vmlinuz ${args}
+initrd http://${mirror}/centos/${osversion}/os/x86_64/images/pxeboot/initrd.img
+boot

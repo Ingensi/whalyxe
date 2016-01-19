@@ -19,4 +19,4 @@ item nextserver ${space} ${next-server}
 item --gap Filename:
 item filename ${space} ${netX/filename}
 choose empty ||
-chain start.ipxe
+chain ../start.ipxe

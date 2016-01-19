@@ -87,9 +87,13 @@ class HttpServer
   # Main server servlet
   class IpxeServlet < WEBrick::HTTPServlet::AbstractServlet
     def do_GET (request, response)
-      file_path =  "#{WHALYXE[:folders][:www]}/#{request.path}"
-      erb_file_path = "#{file_path}.erb"
       response.content_type = 'text/plain'
+      file_path = if request.path == '/'
+                    "#{WHALYXE[:folders][:www]}/start.ipxe"
+                  else
+                    "#{WHALYXE[:folders][:www]}/#{request.path}"
+                  end
+      erb_file_path = "#{file_path}.erb"
       if File.exist? file_path
         response.status = 200
         response.body = File.read file_path

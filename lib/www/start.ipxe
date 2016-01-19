@@ -1,20 +1,19 @@
 #!ipxe
 
-set menu-timeout 0
 :start
+set menu-timeout 0
 menu ~ Ingensi Whalyxe ~
-item --gap      Operating systems :
-item ubuntu		Ubuntu
-item centos		CentOS
-item coreos     CoreOS
-item rancheros  RancherOS
-item --gap      Actions :
-item netinfo	Network information
-item reload		Reload
-item reboot		Reboot
+item --gap              Operating systems :
+item os/ubuntu		    Ubuntu
+item os/centos		    CentOS
+item os/coreos          CoreOS
+item os/rancheros       RancherOS
+item --gap              Actions :
+item actions/netinfo	Network information
+item actions/reload		Reload
+item actions/reboot		Reboot
 choose selected || goto start
 goto sub_file
 
 :sub_file
 chain ${selected}.ipxe
-chain start.ipxe
